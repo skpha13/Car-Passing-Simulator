@@ -34,12 +34,13 @@ glm::mat4
 	myMatrix, resizeMatrix, controlCarMatrix;
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
-float moveX = 0, moveY = 0, movementStep = 2.5;
+float moveX = 0, moveY = 0, movementStep = 2, i = 0, forwardStep = 0.5;
 
 bool keyUpPressed = false,
 	 keyDownPressed = false,
 	 keyLeftPressed = false,
-	 keyRightPressed = false;
+	 keyRightPressed = false,
+	 hasStarted = false;
 
 void LoadTexture(const char* texturePath, GLuint& texture)
 {
@@ -66,15 +67,19 @@ void LoadTexture(const char* texturePath, GLuint& texture)
 void SpecialKeyPressed(int key, int x, int y) {
 	switch (key) {
 		case GLUT_KEY_UP:
+			hasStarted = true;
 			keyUpPressed = true;
 			break;
 		case GLUT_KEY_DOWN:
+			hasStarted = true;
 			keyDownPressed = true;
 			break;
 		case GLUT_KEY_LEFT:
+			hasStarted = true;
 			keyLeftPressed = true;
 			break;
 		case GLUT_KEY_RIGHT:
+			hasStarted = true;
 			keyRightPressed = true;
 			break;
 	}
@@ -100,6 +105,11 @@ void SpecialKeyReleased(int key, int x, int y) {
 void UpdateCarPosition() {
 	moveX += (keyRightPressed - keyLeftPressed) * movementStep;
 	moveY += (keyUpPressed - keyDownPressed) * movementStep;
+}
+
+void MoveForward() {
+	if (hasStarted)
+		i += forwardStep;
 }
 
 void CreateVBO(void)
@@ -211,6 +221,7 @@ void RenderFunction(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	MoveForward();
 
 
 	// road
@@ -307,7 +318,8 @@ void RenderFunction(void)
 	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
 		// right
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
+	controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, i, 0));
+	myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 	glActiveTexture(GL_TEXTURE0);
