@@ -1490,5 +1490,11 @@
     <Image Include="textures\road.jpg">
       <Filter>Resource Files\textures</Filter>
     </Image>
+    <Image Include="textures\lost.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="textures\won.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>

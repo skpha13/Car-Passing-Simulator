@@ -28,7 +28,9 @@ GLuint
 	texture_car_02,
 	texture_tree,
 	texture_asphalt,
-	texture_curbs;
+	texture_curbs,
+	texture_lost,
+	texture_won;
 
 glm::mat4
 	myMatrix, resizeMatrix, controlCarMatrix;
@@ -41,6 +43,8 @@ bool keyUpPressed = false,
 	 keyLeftPressed = false,
 	 keyRightPressed = false,
 	 hasStarted = false;
+
+int gameState = 0;
 
 void LoadTexture(const char* texturePath, GLuint& texture)
 {
@@ -102,6 +106,62 @@ void SpecialKeyReleased(int key, int x, int y) {
 	}
 }
 
+void NormalKeyPressed(unsigned char key, int x, int y) {
+	switch (key) {
+		case 'w':
+		case 'W':
+			hasStarted = true;
+			keyUpPressed = true;
+			break;
+		case 's':
+		case 'S':
+			hasStarted = true;
+			keyDownPressed = true;
+			break;
+		case 'a':
+		case 'A':
+			hasStarted = true;
+			keyLeftPressed = true;
+			break;
+		case 'd':
+		case 'D':
+			hasStarted = true;
+			keyRightPressed = true;
+			break;
+		case 'r':
+		case 'R':
+			hasStarted = false;
+			i = 0;
+			moveX = 0;
+			moveY = 0;
+			break;
+	}
+
+	if (key == 27)
+		exit(0);
+}
+
+void NormalKeyReleased(unsigned char key, int x, int y) {
+	switch (key) {
+		case 'w':
+		case 'W':
+			keyUpPressed = false;
+			break;
+		case 's':
+		case 'S':
+			keyDownPressed = false;
+			break;
+		case 'a':
+		case 'A':
+			keyLeftPressed = false;
+			break;
+		case 'd':
+		case 'D':
+			keyRightPressed = false;
+			break;
+	}
+}
+
 void UpdateCarPosition() {
 	moveX += (keyRightPressed - keyLeftPressed) * movementStep;
 	moveY += (keyUpPressed - keyDownPressed) * movementStep;
@@ -110,6 +170,15 @@ void UpdateCarPosition() {
 void MoveForward() {
 	if (hasStarted)
 		i += forwardStep;
+}
+
+void CheckCollisions() {
+	// TODO: implement
+	// -1 for LOSE, 0 for CONTINUE, 1 for WIN
+
+	// check for curb collision
+	if (moveX <= -175 || moveX >= 175)
+		gameState = -1;
 }
 
 void CreateVBO(void)
@@ -138,6 +207,12 @@ void CreateVBO(void)
 		-375.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
 		-225.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
 		-225.0f,  -250.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+
+		// end screen
+		-400.0f,   500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+		-400.0f,  -500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+		 400.0f,  -500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+		 400.0f,   500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
 	};
 
 	GLuint Indices[] = {
@@ -151,6 +226,9 @@ void CreateVBO(void)
 
 		 // tree indices
 		12, 13, 14, 15,
+
+		 // end screen
+		16, 17, 18, 19,
 	};
 
 	glGenVertexArrays(1, &VaoId);
@@ -212,6 +290,8 @@ void Initialize(void)
 	LoadTexture("textures/car_02.png", texture_car_02);
 	LoadTexture("textures/road.jpg", texture_asphalt);
 	LoadTexture("textures/tree.png", texture_tree);
+	LoadTexture("textures/lost.png", texture_lost);
+	LoadTexture("textures/won.png", texture_won);
 
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
 	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
@@ -221,120 +301,156 @@ void RenderFunction(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	MoveForward();
+	CheckCollisions();
+
+	switch (gameState) {
+		case -1:
+			myMatrix = resizeMatrix;
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_lost);
+
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 16));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+			break;
+		case  1:
+			myMatrix = resizeMatrix;
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_won);
+
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 20));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+			break;
+		case  0:
+			MoveForward();
+
+			// road
+			myMatrix = resizeMatrix;
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_asphalt);
+
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 4));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
 
-	// road
-	myMatrix = resizeMatrix;
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_asphalt);
+			// curbs
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
 
-	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(375, 0, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 4));
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
 
 
 
-	// curbs
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
+			// trees
+			float treeGap = 62.5;
+			float treeRightTranslation = 600;
 
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(375, 0, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_tree);
 
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			// left from bottom to top 
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 250 + 2 * treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 500 + 3 * treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			// right from bottom to top
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 250 + 2 * treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 500 + 3 * treeGap, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
 
 
-	// trees
-	float treeGap = 62.5;
-	float treeRightTranslation = 600;
+			// cars
+				// left
+			UpdateCarPosition();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_tree);
+			controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
+			myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
-	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_car_01);
 
-		// left from bottom to top 
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
 
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
 
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 250 + 2 * treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+			// right
+			controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, i, 0));
+			myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 500 + 3 * treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_car_02);
 
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+			break;
+	}
 	
-		// right from bottom to top
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
-
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 250 + 2 * treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
-
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 500 + 3 * treeGap, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
-
-
-
-	// cars
-		// left
-	UpdateCarPosition();
-
-	controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
-	myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_car_01);
-
-	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
-
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
-
-		// right
-	controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, i, 0));
-	myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
-	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_car_02);
-
-	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
-
-	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
-
-
-
 	glutSwapBuffers();
 	glFlush();
 }
@@ -360,13 +476,18 @@ int main(int argc, char* argv[])
 	Initialize();
 
 	glutDisplayFunc(RenderFunction);
+
 	glutIdleFunc(RenderFunction);
+
 	glutSpecialFunc(SpecialKeyPressed);
 	glutSpecialUpFunc(SpecialKeyReleased);
+
+	glutKeyboardFunc(NormalKeyPressed);
+	glutKeyboardUpFunc(NormalKeyReleased);
+
 	glutCloseFunc(Cleanup);
 
 	glutMainLoop();
 
 	return 0;
 }
-
