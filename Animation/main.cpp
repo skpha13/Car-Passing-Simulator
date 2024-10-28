@@ -12,6 +12,9 @@
 #include "loadShaders.h"
 #include "SOIL.h"
 
+#include <vector>
+#include <utility>
+
 
 GLfloat
 	winWidth = 800, winHeight = 1000;
@@ -37,6 +40,7 @@ glm::mat4
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
 float moveX = 0, moveY = 0, movementStep = 2, i = 0, forwardStep = 0.5;
+float carSizeX = 100, carSizeY = 200, tolerance = 10; // used for tolerance in collision detection
 
 bool keyUpPressed = false,
 	 keyDownPressed = false,
@@ -131,6 +135,7 @@ void NormalKeyPressed(unsigned char key, int x, int y) {
 		case 'r':
 		case 'R':
 			hasStarted = false;
+			gameState = 0;
 			i = 0;
 			moveX = 0;
 			moveY = 0;
@@ -172,13 +177,56 @@ void MoveForward() {
 		i += forwardStep;
 }
 
-void CheckCollisions() {
-	// TODO: implement
-	// -1 for LOSE, 0 for CONTINUE, 1 for WIN
+struct Point {
+	float x = 0.0f;
+	float y = 0.0f;
+};
 
-	// check for curb collision
-	if (moveX <= -175 || moveX >= 175)
+struct CarCoordinates
+{
+	Point bottomLeft, topRight;
+};
+
+std::pair<CarCoordinates, CarCoordinates> getCarsCoordinates() {
+	CarCoordinates dynamicCar = {
+		{ moveX + 75 - carSizeX / 2, moveY - carSizeY / 2 - 375 },
+		{ moveX + 75 + carSizeX / 2, moveY + carSizeY / 2 - 375 }
+	};
+
+	CarCoordinates staticCar = {
+		{ 25, i - carSizeY / 2 - 100 },
+		{ 175, i + carSizeY / 2 - 100 } 
+	};
+
+	return { dynamicCar, staticCar };
+}
+
+void CheckCollisions() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+	CarCoordinates staticCarCoordinates = coordinates.second;
+	
+
+	// check for curb collisions and lower/upper bound limit
+	if (dynamicCarCoordinates.bottomLeft.x <= -175 || dynamicCarCoordinates.topRight.x >= 175 || dynamicCarCoordinates.bottomLeft.y <= -500 || dynamicCarCoordinates.topRight.y >= 500)
 		gameState = -1;
+
+	// check for car collisions
+		// checks if top right corner is inside the other car
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance &&
+		dynamicCarCoordinates.topRight.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.topRight.y <= staticCarCoordinates.topRight.y - tolerance) {
+		gameState = -1;
+	}
+
+		// checks if bottom right corner is inside the other car
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance &&
+		dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.bottomLeft.y <= staticCarCoordinates.topRight.y - tolerance) {
+		gameState = -1;
+	}
+}
+
+void CheckWinCondition() {
+
 }
 
 void CreateVBO(void)
@@ -302,6 +350,7 @@ void RenderFunction(void)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	CheckCollisions();
+	CheckWinCondition();
 
 	switch (gameState) {
 		case -1:
@@ -432,7 +481,7 @@ void RenderFunction(void)
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
-			// right
+				// right
 			controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, i, 0));
 			myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
 			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
