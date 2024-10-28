@@ -226,7 +226,12 @@ void CheckCollisions() {
 }
 
 void CheckWinCondition() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+	CarCoordinates staticCarCoordinates = coordinates.second;
 
+	if (dynamicCarCoordinates.bottomLeft.x >= 20 && dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.topRight.y)
+		gameState = 1;
 }
 
 void CreateVBO(void)
@@ -379,7 +384,7 @@ void RenderFunction(void)
 			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
 			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
 
-			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 20));
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 16));
 
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
