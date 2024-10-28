@@ -5,32 +5,40 @@
 #include <GL/freeglut.h>
 #include "loadShaders.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
+GLfloat
+	winWidth = 800, winHeight = 1000;
 
 GLuint
-VaoId,
-VboId,
-ColorBufferId,
-ProgramId;
+	VaoId,
+	VboId,
+	ColorBufferId,
+	ProgramId,
+	myMatrixLocation;
 
+glm::mat4
+	myMatrix, resizeMatrix;
+
+float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
 
 void CreateVBO(void)
 {
 	GLfloat Vertices[] = {
-		0.5f,  0.5f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f,
-		-0.5f,  0.5f, 0.0f, 1.0f,
-		0.5f,  0.5f, 0.0f, 1.0f
+		-50.0f,  100.0f, 0.0f, 1.0f,
+		-50.0f,  -100.0f, 0.0f, 1.0f,
+		50.0f,  -100.0f, 0.0f, 1.0f,
+		50.0f,  100.0f, 0.0f, 1.0f
 	};
 
 	GLfloat Colors[] = {
 	  1.0f, 0.5f, 0.2f, 1.0f,
 	  1.0f, 0.5f, 0.2f, 1.0f,
 	  1.0f, 0.5f, 0.2f, 1.0f,
-	  1.0f, 0.5f, 0.2f, 1.0f,
-	  1.0f, 0.5f, 0.2f, 1.0f,
-	  1.0f, 0.5f, 0.2f, 1.0f,
+	  1.0f, 0.5f, 0.2f, 1.0f
 	};
 
 	glGenBuffers(1, &VboId);
@@ -49,6 +57,7 @@ void CreateVBO(void)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
+
 void DestroyVBO(void)
 {
 	glDisableVertexAttribArray(1);
@@ -67,6 +76,7 @@ void CreateShaders(void)
 	ProgramId = LoadShaders("example.vert", "example.frag");
 	glUseProgram(ProgramId);
 }
+
 void DestroyShaders(void)
 {
 	glDeleteProgram(ProgramId);
@@ -74,16 +84,21 @@ void DestroyShaders(void)
 
 void Initialize(void)
 {
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.25f, 0.15f, 0.0f, 1.0f);
 	CreateVBO();
 	CreateShaders();
+
+	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
+	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
 }
 void RenderFunction(void)
 {
-	glClear(GL_COLOR_BUFFER_BIT);       
+	glClear(GL_COLOR_BUFFER_BIT);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDrawArrays(GL_TRIANGLES, 3, 3);
+	myMatrix = resizeMatrix;
+	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+	glDrawArrays(GL_POLYGON, 0, 4);
 
 	glFlush();
 }
@@ -97,10 +112,12 @@ int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(600, 600);
 
-	glutCreateWindow("Grafica pe calculator - primul exemplu");
+	int screenWidth = glutGet(GLUT_SCREEN_WIDTH);
+	glutInitWindowPosition(screenWidth / 2 - (winWidth / 2), 0);
+	glutInitWindowSize(winWidth, winHeight);
+
+	glutCreateWindow("Car Passing Simulator");
 
 	glewInit();
 	Initialize();

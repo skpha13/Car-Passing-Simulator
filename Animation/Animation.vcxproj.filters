@@ -1480,4 +1480,12 @@
       <Filter>Resource Files\template-built-ins\DLLs\64b</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\Resources\car-01.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="..\Resources\car-02.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
