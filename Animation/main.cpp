@@ -31,9 +31,15 @@ GLuint
 	texture_curbs;
 
 glm::mat4
-	myMatrix, resizeMatrix;
+	myMatrix, resizeMatrix, controlCarMatrix;
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
+float moveX = 0, moveY = 0, movementStep = 2.5;
+
+bool keyUpPressed = false,
+	 keyDownPressed = false,
+	 keyLeftPressed = false,
+	 keyRightPressed = false;
 
 void LoadTexture(const char* texturePath, GLuint& texture)
 {
@@ -55,6 +61,45 @@ void LoadTexture(const char* texturePath, GLuint& texture)
 
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void SpecialKeyPressed(int key, int x, int y) {
+	switch (key) {
+		case GLUT_KEY_UP:
+			keyUpPressed = true;
+			break;
+		case GLUT_KEY_DOWN:
+			keyDownPressed = true;
+			break;
+		case GLUT_KEY_LEFT:
+			keyLeftPressed = true;
+			break;
+		case GLUT_KEY_RIGHT:
+			keyRightPressed = true;
+			break;
+	}
+}
+
+void SpecialKeyReleased(int key, int x, int y) {
+	switch (key) {
+		case GLUT_KEY_UP:
+			keyUpPressed = false;
+			break;
+		case GLUT_KEY_DOWN:
+			keyDownPressed = false;
+			break;
+		case GLUT_KEY_LEFT:
+			keyLeftPressed = false;
+			break;
+		case GLUT_KEY_RIGHT:
+			keyRightPressed = false;
+			break;
+	}
+}
+
+void UpdateCarPosition() {
+	moveX += (keyRightPressed - keyLeftPressed) * movementStep;
+	moveY += (keyUpPressed - keyDownPressed) * movementStep;
 }
 
 void CreateVBO(void)
@@ -161,6 +206,7 @@ void Initialize(void)
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
 	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
 }
+
 void RenderFunction(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -243,7 +289,10 @@ void RenderFunction(void)
 
 	// cars
 		// left
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(-75, 0, 0));
+	UpdateCarPosition();
+
+	controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
+	myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -258,7 +307,7 @@ void RenderFunction(void)
 	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
 		// right
-	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, 0, 0.0));
+	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -277,6 +326,7 @@ void RenderFunction(void)
 	glutSwapBuffers();
 	glFlush();
 }
+
 void Cleanup(void)
 {
 	DestroyShaders();
@@ -298,8 +348,13 @@ int main(int argc, char* argv[])
 	Initialize();
 
 	glutDisplayFunc(RenderFunction);
+	glutIdleFunc(RenderFunction);
+	glutSpecialFunc(SpecialKeyPressed);
+	glutSpecialUpFunc(SpecialKeyReleased);
 	glutCloseFunc(Cleanup);
 
 	glutMainLoop();
+
+	return 0;
 }
 
