@@ -155,6 +155,8 @@ void Initialize(void)
 
 	LoadTexture("textures/car_01.png", texture_car_01);
 	LoadTexture("textures/car_02.png", texture_car_02);
+	LoadTexture("textures/road.jpg", texture_asphalt);
+	LoadTexture("textures/tree.png", texture_tree);
 
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
 	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
@@ -169,7 +171,18 @@ void RenderFunction(void)
 	myMatrix = resizeMatrix;
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_asphalt);
+
+	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 4));
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+
 
 	// curbs
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
@@ -179,9 +192,17 @@ void RenderFunction(void)
 
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 8));
 
+
+
 	// trees
 	float treeGap = 62.5;
 	float treeRightTranslation = 600;
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_tree);
+
+	glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
 
 		// left from bottom to top 
 	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, treeGap, 0));
@@ -214,6 +235,11 @@ void RenderFunction(void)
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+
 
 	// cars
 		// left

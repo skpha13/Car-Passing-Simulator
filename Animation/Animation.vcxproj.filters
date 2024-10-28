@@ -1484,5 +1484,11 @@
     <Image Include="textures\car_01.png">
       <Filter>Resource Files\textures</Filter>
     </Image>
+    <Image Include="textures\car_02.png">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
+    <Image Include="textures\road.jpg">
+      <Filter>Resource Files\textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>
