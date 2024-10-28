@@ -60,7 +60,7 @@ void LoadTexture(const char* texturePath, GLuint& texture)
 void CreateVBO(void)
 {
 	GLfloat Vertices[] = {
-		// car vertices
+		// car vertices - left
 		-50.0f,   100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 1.0f,
 		-50.0f,  -100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 0.0f,
 		 50.0f,  -100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 0.0f,
@@ -72,14 +72,13 @@ void CreateVBO(void)
 		 175.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 0.0f,
 		 175.0f,   500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 1.0f,
 
-		// curbs vertices
-			// left
+		// curbs vertices - left
 		-200.0f,   500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   0.0f, 1.0f,
 		-200.0f,  -500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   0.0f, 0.0f,
 		-175.0f,  -500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   1.0f, 0.0f,
 		-175.0f,   500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   1.0f, 1.0f,
 
-		// tree
+		// tree - bottom left
 		-375.0f,  -250.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
 		-375.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
 		-225.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
@@ -217,6 +216,7 @@ void RenderFunction(void)
 	glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
 
 	// cars
+		// left
 	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(-75, 0, 0));
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
@@ -231,7 +231,7 @@ void RenderFunction(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
 
-
+		// right
 	myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, 0, 0.0));
 	glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
