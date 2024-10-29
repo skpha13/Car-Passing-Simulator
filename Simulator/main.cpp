@@ -39,7 +39,7 @@ glm::mat4
 	myMatrix, resizeMatrix, controlCarMatrix;
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
-float moveX = 0, moveY = 0, movementStep = 2, i = 0, forwardStep = 0.5;
+float moveX = 0, moveY = 0, movementStep = 0.2, i = 0, forwardStep = 0.05;
 float carSizeX = 100, carSizeY = 200, tolerance = 10; // used for tolerance in collision detection
 
 bool keyUpPressed = false,
@@ -208,19 +208,24 @@ void CheckCollisions() {
 	
 
 	// check for curb collisions and lower/upper bound limit
-	if (dynamicCarCoordinates.bottomLeft.x <= -175 || dynamicCarCoordinates.topRight.x >= 175 || dynamicCarCoordinates.bottomLeft.y <= -500 || dynamicCarCoordinates.topRight.y >= 500)
+	if (
+		dynamicCarCoordinates.bottomLeft.x <= -175
+		|| dynamicCarCoordinates.topRight.x >= 175
+		|| dynamicCarCoordinates.bottomLeft.y <= -500
+		|| dynamicCarCoordinates.topRight.y >= 500
+	)
 		gameState = -1;
 
 	// check for car collisions
 		// checks if top right corner is inside the other car
-	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance &&
-		dynamicCarCoordinates.topRight.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.topRight.y <= staticCarCoordinates.topRight.y - tolerance) {
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance
+		&& dynamicCarCoordinates.topRight.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.topRight.y <= staticCarCoordinates.topRight.y - tolerance) {
 		gameState = -1;
 	}
 
 		// checks if bottom right corner is inside the other car
-	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance &&
-		dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.bottomLeft.y <= staticCarCoordinates.topRight.y - tolerance) {
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance
+		&& dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.bottomLeft.y <= staticCarCoordinates.topRight.y - tolerance) {
 		gameState = -1;
 	}
 }

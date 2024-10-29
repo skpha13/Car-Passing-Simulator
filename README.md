@@ -48,3 +48,25 @@ The player controls the car directly, offering a more immersive and engaging exp
 Custom textures and improved graphics enhance the overall gameplay, providing a visually appealing and enjoyable environment.
 
 ## Code Implementation
+
+### Car Movement
+
+<img src="Resources/Code/car_movement.png" alt="Car Movement" width="500" height="400">
+
+### Collision and Win Condition
+
+<img src="Resources/Code/collision_and_win_condition.png" alt="Collision and Win Condition">
+
+### Gamestate Logic
+
+<img src="Resources/Code/gamestate_logic.png" alt="Gamestate Logic" width="600" height="400">
+
+### Reusability of Objects
+
+<img src="Resources/Code/reusability_of_objects.png" alt="Reusability of Objects" width="460" height="620">
+
+<img src="Resources/Code/reusability_of_objects_code.png" alt="Reusability of Objects Code">
+
+<img src="Resources/Code/reusability_of_car.png" alt="Reusability of Car" width="600" height="400">
+
+<img src="Resources/Demos/reusability.png" alt="Reusability Demo" width="400" height="500">
