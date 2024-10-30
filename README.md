@@ -52,9 +52,33 @@ Custom textures and improved graphics enhance the overall gameplay, providing a 
 ### [Car Movement](https://www.youtube.com/watch?v=T2W6mhOxuKI&list=PLB5_pVetb2rIQ9pRyCA_RyQuO8RT8FWdH)
 
 ```C++
+void DecreasePercent() {
+	percent -= percentFactor;
+
+	if (percent < 0)
+		percent = 0;
+
+	rotateMatrix = glm::rotate(glm::mat4(1.0f), -1 * rotateDirection * percent * angle, glm::vec3(0.0, 0.0, 1.0));
+}
+
+void IncreasePercent() {
+	percent += percentFactor;
+
+	if (percent > 1)
+		percent = 1;
+
+	rotateMatrix = glm::rotate(glm::mat4(1.0f), -1 * rotateDirection * percent * angle, glm::vec3(0.0, 0.0, 1.0));
+}
+
+
 void UpdateCarPosition() {
 	moveX += (keyRightPressed - keyLeftPressed) * movementStep;
 	moveY += (keyUpPressed - keyDownPressed) * movementStep;
+
+	if (keyLeftPressed || keyRightPressed)
+		IncreasePercent();
+	else
+		DecreasePercent();
 }
 
 void MoveForward() {
@@ -85,6 +109,23 @@ std::pair<CarCoordinates, CarCoordinates> getCarsCoordinates() {
 
 	return { dynamicCar, staticCar };
 }
+```
+
+```C++
+void SetCarTranslation() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+
+	translateToOriginMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-dynamicCarCoordinates.bottomLeft.x - carSizeX / 2, -dynamicCarCoordinates.bottomLeft.y - carSizeY / 2, 0));
+	translateBack = glm::translate(glm::mat4(1.0f), glm::vec3(dynamicCarCoordinates.bottomLeft.x + carSizeX / 2, dynamicCarCoordinates.bottomLeft.y + carSizeY / 2, 0));
+}
+```
+
+Applied Matrix Transform Order:
+
+```C++
+controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
+myMatrix = resizeMatrix * translateBack * rotateMatrix * translateToOriginMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
 ```
 
 ### [Collision and Win Condition](https://www.youtube.com/watch?v=AKuU3OG8U9A&list=PLB5_pVetb2rIQ9pRyCA_RyQuO8RT8FWdH&index=2) 
@@ -295,9 +336,10 @@ I reuse a single car model but vary its placement and orientation across the sce
 // cars
 	// left
 UpdateCarPosition();
+SetCarTranslation();
 
 controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
-myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
+myMatrix = resizeMatrix * translateBack * rotateMatrix * translateToOriginMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
 glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 glActiveTexture(GL_TEXTURE0);
