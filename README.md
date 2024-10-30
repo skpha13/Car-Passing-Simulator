@@ -51,22 +51,283 @@ Custom textures and improved graphics enhance the overall gameplay, providing a 
 
 ### Car Movement
 
-<img src="Resources/Code/car_movement.png" alt="Car Movement" width="500" height="400">
+```C++
+void UpdateCarPosition() {
+	moveX += (keyRightPressed - keyLeftPressed) * movementStep;
+	moveY += (keyUpPressed - keyDownPressed) * movementStep;
+}
+
+void MoveForward() {
+	if (hasStarted)
+		i += forwardStep;
+}
+
+struct Point {
+	float x = 0.0f;
+	float y = 0.0f;
+};
+
+struct CarCoordinates
+{
+	Point bottomLeft, topRight;
+};
+
+std::pair<CarCoordinates, CarCoordinates> getCarsCoordinates() {
+	CarCoordinates dynamicCar = {
+		{ moveX + 75 - carSizeX / 2, moveY - carSizeY / 2 - 375 },
+		{ moveX + 75 + carSizeX / 2, moveY + carSizeY / 2 - 375 }
+	};
+
+	CarCoordinates staticCar = {
+		{ 25, i - carSizeY / 2 - 100 },
+		{ 175, i + carSizeY / 2 - 100 } 
+	};
+
+	return { dynamicCar, staticCar };
+}
+```
 
 ### Collision and Win Condition
 
-<img src="Resources/Code/collision_and_win_condition.png" alt="Collision and Win Condition">
+```C++
+void CheckCollisions() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+	CarCoordinates staticCarCoordinates = coordinates.second;
+	
+
+	// check for curb collisions and lower/upper bound limit
+	if (
+		dynamicCarCoordinates.bottomLeft.x <= -175
+		|| dynamicCarCoordinates.topRight.x >= 175
+		|| dynamicCarCoordinates.bottomLeft.y <= -500
+		|| dynamicCarCoordinates.topRight.y >= 500
+	)
+		gameState = -1;
+
+	// check for car collisions
+		// checks if top right corner is inside the other car
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance
+		&& dynamicCarCoordinates.topRight.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.topRight.y <= staticCarCoordinates.topRight.y - tolerance) {
+		gameState = -1;
+	}
+
+		// checks if bottom right corner is inside the other car
+	if (dynamicCarCoordinates.topRight.x >= staticCarCoordinates.bottomLeft.x + tolerance && dynamicCarCoordinates.topRight.x <= staticCarCoordinates.topRight.x - tolerance
+		&& dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.bottomLeft.y + tolerance && dynamicCarCoordinates.bottomLeft.y <= staticCarCoordinates.topRight.y - tolerance) {
+		gameState = -1;
+	}
+}
+
+void CheckWinCondition() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+	CarCoordinates staticCarCoordinates = coordinates.second;
+
+	if (dynamicCarCoordinates.bottomLeft.x >= 20 && dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.topRight.y)
+		gameState = 1;
+}
+```
 
 ### Gamestate Logic
 
-<img src="Resources/Code/gamestate_logic.png" alt="Gamestate Logic" width="600" height="400">
+```C++
+void RenderFunction(void)
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	CheckCollisions();
+	CheckWinCondition();
+
+	switch (gameState) {
+		case -1:
+			myMatrix = resizeMatrix;
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_lost);
+
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 16));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+			break;
+		case  1:
+			myMatrix = resizeMatrix;
+			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture_won);
+
+			glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+			glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 16));
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+			break;
+		case  0:
+			MoveForward();
+    }
+}
+```
 
 ### Reusability of Objects
 
-<img src="Resources/Code/reusability_of_objects.png" alt="Reusability of Objects" width="460" height="620">
+Each object was only drawn once and reused, the location of it was changed
+with translations.
 
-<img src="Resources/Code/reusability_of_objects_code.png" alt="Reusability of Objects Code">
+The following code block shows all object vertices loaded into the scene:
 
-<img src="Resources/Code/reusability_of_car.png" alt="Reusability of Car" width="600" height="400">
+```C++
+GLfloat Vertices[] = {
+	// car vertices - left
+	-50.0f,   100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+	-50.0f,  -100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+	 50.0f,  -100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+	 50.0f,   100.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 1.0f,
 
-<img src="Resources/Demos/reusability.png" alt="Reusability Demo" width="400" height="500">
+	// road vertices
+	-175.0f,   500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+	-175.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+	 175.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+	 175.0f,   500.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+
+	// curbs vertices - left
+	-200.0f,   500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   0.0f, 1.0f,
+	-200.0f,  -500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   0.0f, 0.0f,
+	-175.0f,  -500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   1.0f, 0.0f,
+	-175.0f,   500.0f, 0.0f, 1.0f,    0.5f, 0.5f, 0.5f,   1.0f, 1.0f,
+
+	// tree - bottom left
+	-375.0f,  -250.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+	-375.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+	-225.0f,  -500.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+	-225.0f,  -250.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+
+	// end screen
+	-400.0f,   500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
+	-400.0f,  -500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+	 400.0f,  -500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+	 400.0f,   500.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+};
+
+GLuint Indices[] = {
+	 // car_01 indices
+	 0,  1,  2,  3,
+	 // car_02 indices
+	 4,  5,  6,  7,
+	 
+	 // curb indices
+	 8,  9, 10, 11,
+
+	 // tree indices
+	12, 13, 14, 15,
+
+	 // end screen
+	16, 17, 18, 19,
+};
+```
+
+**Tree Duplication Using Translations:**
+
+The trees are rendered by drawing one tree model and applying transformations to duplicate it across the scene. 
+
+```C++
+// trees
+float treeGap = 62.5;
+float treeRightTranslation = 600;
+
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, texture_tree);
+
+glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+// left from bottom to top 
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 250 + 2 * treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(0, 500 + 3 * treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+// right from bottom to top
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 250 + 2 * treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+myMatrix = resizeMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(treeRightTranslation, 500 + 3 * treeGap, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(sizeof(GLuint) * 12));
+
+glBindTexture(GL_TEXTURE_2D, 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+```
+
+Car Duplication with Modified Logic
+
+For cars, I slightly modified the logic to account for different transformations. The example below shows how 
+I reuse a single car model but vary its placement and orientation across the scene.
+
+```C++
+// cars
+	// left
+UpdateCarPosition();
+
+controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
+myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, texture_car_01);
+
+glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
+
+glBindTexture(GL_TEXTURE_2D, 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+
+	// right
+controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, i, 0));
+myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -100, 0.0));
+glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
+
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, texture_car_02);
+
+glUniform1i(glGetUniformLocation(ProgramId, "myTexture"), 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 1);
+
+glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, (void*)(0));
+
+glBindTexture(GL_TEXTURE_2D, 0);
+glUniform1i(glGetUniformLocation(ProgramId, "hasTexture"), 0);
+```
+
+The scene below demonstrates the result:
+
+<img src="Demos/reusability.png" alt="Reusability Demo" width="400" height="500">
