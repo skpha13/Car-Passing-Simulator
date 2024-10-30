@@ -36,11 +36,12 @@ GLuint
 	texture_won;
 
 glm::mat4
-	myMatrix, resizeMatrix, controlCarMatrix;
+	myMatrix, resizeMatrix, controlCarMatrix,
+	rotateMatrix, translateToOriginMatrix, translateBack;
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
-float moveX = 0, moveY = 0, movementStep = 2, i = 0, forwardStep = 0.5;
-float carSizeX = 100, carSizeY = 200, tolerance = 10; // used for tolerance in collision detection
+float moveX = 0, moveY = 0, movementStep = 0.2, i = 0, forwardStep = 0.05;
+float carSizeX = 100, carSizeY = 200, tolerance = 10, pi = 3.14, angle = pi / 32; // used for tolerance in collision detection
 
 bool keyUpPressed = false,
 	 keyDownPressed = false,
@@ -72,6 +73,14 @@ void LoadTexture(const char* texturePath, GLuint& texture)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+// -1 for left 
+// 0 for nothing
+// 1 for right 
+void rotate(int direction) {
+	direction *= -1;
+	rotateMatrix = glm::rotate(glm::mat4(1.0f), direction * angle, glm::vec3(0.0, 0.0, 1.0));
+}
+
 void SpecialKeyPressed(int key, int x, int y) {
 	switch (key) {
 		case GLUT_KEY_UP:
@@ -83,10 +92,12 @@ void SpecialKeyPressed(int key, int x, int y) {
 			keyDownPressed = true;
 			break;
 		case GLUT_KEY_LEFT:
+			rotate(-1);
 			hasStarted = true;
 			keyLeftPressed = true;
 			break;
 		case GLUT_KEY_RIGHT:
+			rotate(1);
 			hasStarted = true;
 			keyRightPressed = true;
 			break;
@@ -102,9 +113,11 @@ void SpecialKeyReleased(int key, int x, int y) {
 			keyDownPressed = false;
 			break;
 		case GLUT_KEY_LEFT:
+			rotate(0);
 			keyLeftPressed = false;
 			break;
 		case GLUT_KEY_RIGHT:
+			rotate(0);
 			keyRightPressed = false;
 			break;
 	}
@@ -124,11 +137,13 @@ void NormalKeyPressed(unsigned char key, int x, int y) {
 			break;
 		case 'a':
 		case 'A':
+			rotate(-1);
 			hasStarted = true;
 			keyLeftPressed = true;
 			break;
 		case 'd':
 		case 'D':
+			rotate(1);
 			hasStarted = true;
 			keyRightPressed = true;
 			break;
@@ -158,10 +173,12 @@ void NormalKeyReleased(unsigned char key, int x, int y) {
 			break;
 		case 'a':
 		case 'A':
+			rotate(0);
 			keyLeftPressed = false;
 			break;
 		case 'd':
 		case 'D':
+			rotate(0);
 			keyRightPressed = false;
 			break;
 	}
@@ -239,6 +256,15 @@ void CheckWinCondition() {
 	if (dynamicCarCoordinates.bottomLeft.x >= 20 && dynamicCarCoordinates.bottomLeft.y >= staticCarCoordinates.topRight.y)
 		gameState = 1;
 }
+
+void SetCarTranslation() {
+	std::pair<CarCoordinates, CarCoordinates> coordinates = getCarsCoordinates();
+	CarCoordinates dynamicCarCoordinates = coordinates.first;
+
+	translateToOriginMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-dynamicCarCoordinates.bottomLeft.x, -dynamicCarCoordinates.bottomLeft.y, 0));
+	translateBack = glm::translate(glm::mat4(1.0f), glm::vec3(dynamicCarCoordinates.bottomLeft.x, dynamicCarCoordinates.bottomLeft.y, 0));
+}
+
 
 void CreateVBO(void)
 {
@@ -354,6 +380,7 @@ void Initialize(void)
 
 	myMatrixLocation = glGetUniformLocation(ProgramId, "myMatrix");
 	resizeMatrix = glm::ortho(xMin, xMax, yMin, yMax);
+	rotateMatrix = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0, 0.0, 1.0));
 }
 
 void RenderFunction(void)
@@ -476,9 +503,10 @@ void RenderFunction(void)
 			// cars
 				// left
 			UpdateCarPosition();
+			SetCarTranslation();
 
 			controlCarMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(moveX, moveY, 0));
-			myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0));
+			myMatrix = resizeMatrix * controlCarMatrix * glm::translate(glm::mat4(1.0f), glm::vec3(75, -375, 0)) * translateBack * rotateMatrix * translateToOriginMatrix;
 			glUniformMatrix4fv(myMatrixLocation, 1, GL_FALSE, &myMatrix[0][0]);
 
 			glActiveTexture(GL_TEXTURE0);
