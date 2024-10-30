@@ -39,7 +39,7 @@ glm::mat4
 	myMatrix, resizeMatrix, controlCarMatrix;
 
 float xMin = -400, xMax = 400, yMin = -500, yMax = 500;
-float moveX = 0, moveY = 0, movementStep = 0.2, i = 0, forwardStep = 0.05;
+float moveX = 0, moveY = 0, movementStep = 2, i = 0, forwardStep = 0.5;
 float carSizeX = 100, carSizeY = 200, tolerance = 10; // used for tolerance in collision detection
 
 bool keyUpPressed = false,
@@ -213,6 +213,7 @@ void CheckCollisions() {
 		|| dynamicCarCoordinates.topRight.x >= 175
 		|| dynamicCarCoordinates.bottomLeft.y <= -500
 		|| dynamicCarCoordinates.topRight.y >= 500
+		|| staticCarCoordinates.topRight.y >= 500
 	)
 		gameState = -1;
 

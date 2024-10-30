@@ -49,7 +49,7 @@ Custom textures and improved graphics enhance the overall gameplay, providing a 
 
 ## Code Implementation
 
-### Car Movement
+### [Car Movement](https://www.youtube.com/watch?v=0ziW8Gbi59M&list=PLB5_pVetb2rIQ9pRyCA_RyQuO8RT8FWdH)
 
 ```C++
 void UpdateCarPosition() {
@@ -87,7 +87,7 @@ std::pair<CarCoordinates, CarCoordinates> getCarsCoordinates() {
 }
 ```
 
-### Collision and Win Condition
+### [Collision and Win Condition](https://www.youtube.com/watch?v=u1W8Gd-bDv4&list=PLB5_pVetb2rIQ9pRyCA_RyQuO8RT8FWdH&index=2) 
 
 ```C++
 void CheckCollisions() {
@@ -129,7 +129,7 @@ void CheckWinCondition() {
 }
 ```
 
-### Gamestate Logic
+### [Gamestate Logic](https://www.youtube.com/watch?v=msTzXSbyCkg&list=PLB5_pVetb2rIQ9pRyCA_RyQuO8RT8FWdH&index=3)
 
 ```C++
 void RenderFunction(void)
