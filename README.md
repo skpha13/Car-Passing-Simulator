@@ -32,6 +32,10 @@ The coordinates are then scaled back to fit within the normalized range of `[-1,
 
 Translation is used to animate the cars' movement and enable user-controlled positioning.
 
+### Rotation Transform
+
+The rotation transformation is used to simulate the car's steering and directional changes.
+
 ## Originality of the Approach
 
 ### Level-Based Challenge
